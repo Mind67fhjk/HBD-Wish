@@ -41,11 +41,11 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
 
   return (
     <div className="mb-12">
-      <div className="flex justify-center gap-8 mb-4">
+      <div className="flex justify-center gap-8 mb-4 flex-wrap">
         {Object.entries(timeLeft).map(([unit, value]) => (
           <div
             key={unit}
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center min-w-[100px] shadow-lg"
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center min-w-[100px] shadow-lg hover:bg-white/15 transition-all duration-300"
           >
             <div className="text-3xl font-bold text-yellow-400 font-mono">
               {value.toString().padStart(2, '0')}
@@ -60,10 +60,10 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
       <p className="text-white/90 text-lg italic text-center">
         {isComplete ? (
           <>
-            🎉 <span className="font-semibold">Happy Birthday!</span> 🎉
+            🎉 <span className="font-semibold text-yellow-400">Happy Birthday ElaJa!</span> 🎉
           </>
         ) : (
-          'Until the celebration begins!'
+          'Until ElaJa\'s special celebration begins!'
         )}
       </p>
     </div>

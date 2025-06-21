@@ -10,11 +10,16 @@ import Guestbook from './components/Guestbook';
 import InteractiveQuiz from './components/InteractiveQuiz';
 import SharingSection from './components/SharingSection';
 import FloatingParticles from './components/FloatingParticles';
+import NotificationSystem from './components/NotificationSystem';
+import MusicPlayer from './components/MusicPlayer';
 
 function App() {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+
+  // Set ElaJa's birthday date - Update this to your actual birthday!
+  const ELAJA_BIRTHDAY = '2025-12-25T00:00:00'; // Change this to your birthday date
 
   useEffect(() => {
     fetchCelebration();
@@ -53,12 +58,12 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching celebration:', error);
-      // Create a fallback celebration
+      // Create a fallback celebration with ElaJa's birthday
       setCelebration({
-        id: 'default',
-        title: 'Birthday Celebration',
-        description: 'Join us for an amazing birthday celebration!',
-        target_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        id: 'elaja-birthday',
+        title: 'ElaJa\'s Amazing Birthday Celebration',
+        description: 'Join us in celebrating ElaJa\'s special day with joy, laughter, and wonderful memories!',
+        target_date: ELAJA_BIRTHDAY,
         is_public: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -70,14 +75,12 @@ function App() {
 
   const toggleMusic = () => {
     setIsMusicPlaying(!isMusicPlaying);
-    // Here you would integrate with an audio player
-    // For now, we'll just show the visual feedback
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-xl">Loading celebration...</div>
+        <div className="text-white text-xl">Loading ElaJa's celebration...</div>
       </div>
     );
   }
@@ -98,6 +101,13 @@ function App() {
         title={celebration.title}
         onMusicToggle={toggleMusic}
         isMusicPlaying={isMusicPlaying}
+      />
+      
+      <NotificationSystem celebrationId={celebration.id} />
+      
+      <MusicPlayer 
+        isPlaying={isMusicPlaying} 
+        onPlayStateChange={setIsMusicPlaying}
       />
       
       <main className="max-w-6xl mx-auto px-4 pb-16">
@@ -121,7 +131,13 @@ function App() {
       
       <footer className="text-center py-12 text-white/70 font-light relative z-10">
         <div className="w-16 h-px bg-white/30 mx-auto mb-8"></div>
-        <p>&copy; 2025 Celebrating Life's Beautiful Moments</p>
+        <div className="mb-4">
+          <div className="font-playfair text-lg font-semibold bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+            ElaJa Celebrations
+          </div>
+          <div className="text-sm text-white/50 mt-1">Creating Amazing Birthday Memories</div>
+        </div>
+        <p>&copy; 2025 ElaJa Celebrations - Where Every Moment Becomes a Beautiful Memory</p>
       </footer>
       
       <Toaster
