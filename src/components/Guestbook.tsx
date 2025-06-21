@@ -7,10 +7,15 @@ interface GuestbookProps {
   celebrationId: string;
 }
 
+interface MessageWithReply extends GuestbookMessage {
+  admin_reply?: string;
+  reply_timestamp?: string;
+}
+
 const emojis = ['🎉', '🎂', '🎈', '🎁', '❤️', '🌟'];
 
 export default function Guestbook({ celebrationId }: GuestbookProps) {
-  const [messages, setMessages] = useState<GuestbookMessage[]>([]);
+  const [messages, setMessages] = useState<MessageWithReply[]>([]);
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,12 +27,12 @@ export default function Guestbook({ celebrationId }: GuestbookProps) {
     const subscription = supabase
       .channel('guestbook_messages')
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'guestbook_messages',
         filter: `celebration_id=eq.${celebrationId}`
-      }, (payload) => {
-        setMessages(prev => [payload.new as GuestbookMessage, ...prev]);
+      }, () => {
+        fetchMessages();
       })
       .subscribe();
 
@@ -158,7 +163,22 @@ export default function Guestbook({ celebrationId }: GuestbookProps) {
                     {new Date(msg.created_at).toLocaleDateString()} {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <p className="text-white/90 leading-relaxed">{msg.message}</p>
+                <p className="text-white/90 leading-relaxed mb-3">{msg.message}</p>
+                
+                {/* Show admin reply if exists */}
+                {msg.admin_reply && (
+                  <div className="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-4 mt-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-yellow-400 font-medium text-sm">💬 Admin Reply</span>
+                      {msg.reply_timestamp && (
+                        <span className="text-white/50 text-xs">
+                          {new Date(msg.reply_timestamp).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-white/90 text-sm leading-relaxed">{msg.admin_reply}</p>
+                  </div>
+                )}
               </div>
             ))
           )}

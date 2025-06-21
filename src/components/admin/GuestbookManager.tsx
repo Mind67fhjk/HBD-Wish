@@ -51,14 +51,14 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
 
       if (error) throw error;
       
-      // Load admin replies from localStorage (in a real app, this would be in the database)
+      // Load admin replies from database (we'll store them in a separate table or as metadata)
       const messagesWithReplies = (data || []).map(message => {
-        const reply = localStorage.getItem(`admin_reply_${message.id}`);
-        const replyTimestamp = localStorage.getItem(`admin_reply_timestamp_${message.id}`);
+        // For now, we'll use a simple approach with message metadata
+        // In production, you'd want a separate admin_replies table
         return {
           ...message,
-          admin_reply: reply || undefined,
-          reply_timestamp: replyTimestamp || undefined
+          admin_reply: message.admin_reply || undefined,
+          reply_timestamp: message.reply_timestamp || undefined
         };
       });
       
@@ -82,39 +82,60 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
 
       if (error) throw error;
       
-      // Also remove admin reply from localStorage
-      localStorage.removeItem(`admin_reply_${messageId}`);
-      localStorage.removeItem(`admin_reply_timestamp_${messageId}`);
-      
       toast.success('Message deleted successfully');
-      fetchMessages();
+      // The real-time subscription will automatically update the list
     } catch (error) {
       console.error('Error deleting message:', error);
       toast.error('Failed to delete message');
     }
   };
 
-  const saveReply = (messageId: string) => {
+  const saveReply = async (messageId: string) => {
     if (!replyText.trim()) {
       toast.error('Please enter a reply');
       return;
     }
 
-    // Save reply to localStorage (in a real app, this would be saved to database)
-    localStorage.setItem(`admin_reply_${messageId}`, replyText.trim());
-    localStorage.setItem(`admin_reply_timestamp_${messageId}`, new Date().toISOString());
-    
-    setReplyingTo(null);
-    setReplyText('');
-    toast.success('Reply saved successfully');
-    fetchMessages();
+    try {
+      // Update the message with admin reply
+      const { error } = await supabase
+        .from('guestbook_messages')
+        .update({
+          admin_reply: replyText.trim(),
+          reply_timestamp: new Date().toISOString()
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+      
+      setReplyingTo(null);
+      setReplyText('');
+      toast.success('Reply saved successfully');
+      // The real-time subscription will automatically update the list
+    } catch (error) {
+      console.error('Error saving reply:', error);
+      toast.error('Failed to save reply');
+    }
   };
 
-  const deleteReply = (messageId: string) => {
-    localStorage.removeItem(`admin_reply_${messageId}`);
-    localStorage.removeItem(`admin_reply_timestamp_${messageId}`);
-    toast.success('Reply deleted');
-    fetchMessages();
+  const deleteReply = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('guestbook_messages')
+        .update({
+          admin_reply: null,
+          reply_timestamp: null
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+      
+      toast.success('Reply deleted');
+      // The real-time subscription will automatically update the list
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+      toast.error('Failed to delete reply');
+    }
   };
 
   const filteredMessages = messages

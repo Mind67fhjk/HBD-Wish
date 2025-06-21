@@ -60,7 +60,7 @@ export default function CelebrationSettings({ celebration, onRefresh }: Celebrat
     }
   };
 
-  const updateCountdownTime = () => {
+  const updateCountdownTime = async () => {
     const now = new Date();
     const newTargetTime = new Date(
       now.getTime() + 
@@ -70,12 +70,31 @@ export default function CelebrationSettings({ celebration, onRefresh }: Celebrat
       (countdownTime.seconds * 1000)
     );
     
-    setFormData({
+    const newFormData = {
       ...formData,
       target_date: newTargetTime.toISOString().slice(0, 16)
-    });
+    };
     
-    toast.success('Countdown time updated! Remember to save changes.');
+    setFormData(newFormData);
+    
+    // Save to database immediately
+    try {
+      const { error } = await supabase
+        .from('celebrations')
+        .update({
+          target_date: newTargetTime.toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', celebration.id);
+
+      if (error) throw error;
+
+      toast.success('Countdown time updated successfully!');
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating countdown:', error);
+      toast.error('Failed to update countdown time');
+    }
   };
 
   return (
