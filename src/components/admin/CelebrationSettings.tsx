@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Save, RefreshCw } from 'lucide-react';
+import { Calendar, Save, RefreshCw, Clock } from 'lucide-react';
 import { supabase, Celebration } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,21 @@ export default function CelebrationSettings({ celebration, onRefresh }: Celebrat
     target_date: new Date(celebration.target_date).toISOString().slice(0, 16),
     is_public: celebration.is_public
   });
+  
+  // Countdown time controls
+  const [countdownTime, setCountdownTime] = useState(() => {
+    const now = new Date();
+    const target = new Date(celebration.target_date);
+    const diff = target.getTime() - now.getTime();
+    
+    return {
+      days: Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24))),
+      hours: Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))),
+      minutes: Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))),
+      seconds: Math.max(0, Math.floor((diff % (1000 * 60)) / 1000))
+    };
+  });
+  
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +58,24 @@ export default function CelebrationSettings({ celebration, onRefresh }: Celebrat
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateCountdownTime = () => {
+    const now = new Date();
+    const newTargetTime = new Date(
+      now.getTime() + 
+      (countdownTime.days * 24 * 60 * 60 * 1000) +
+      (countdownTime.hours * 60 * 60 * 1000) +
+      (countdownTime.minutes * 60 * 1000) +
+      (countdownTime.seconds * 1000)
+    );
+    
+    setFormData({
+      ...formData,
+      target_date: newTargetTime.toISOString().slice(0, 16)
+    });
+    
+    toast.success('Countdown time updated! Remember to save changes.');
   };
 
   return (
@@ -127,6 +160,82 @@ export default function CelebrationSettings({ celebration, onRefresh }: Celebrat
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Countdown Time Controls */}
+      <div className="glass-card p-8">
+        <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+          <Clock size={24} />
+          Countdown Timer Controls
+        </h2>
+        
+        <div className="space-y-6">
+          <p className="text-white/70">Set a custom countdown time from now:</p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-2">Days</label>
+              <input
+                type="number"
+                min="0"
+                max="365"
+                value={countdownTime.days}
+                onChange={(e) => setCountdownTime({ ...countdownTime, days: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-2">Hours</label>
+              <input
+                type="number"
+                min="0"
+                max="23"
+                value={countdownTime.hours}
+                onChange={(e) => setCountdownTime({ ...countdownTime, hours: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-2">Minutes</label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={countdownTime.minutes}
+                onChange={(e) => setCountdownTime({ ...countdownTime, minutes: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-2">Seconds</label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={countdownTime.seconds}
+                onChange={(e) => setCountdownTime({ ...countdownTime, seconds: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20"
+              />
+            </div>
+          </div>
+          
+          <button
+            onClick={updateCountdownTime}
+            className="btn-primary"
+          >
+            <Clock size={20} />
+            Set Countdown Time
+          </button>
+          
+          <div className="p-4 bg-blue-400/10 border border-blue-400/20 rounded-xl">
+            <p className="text-blue-400 text-sm">
+              <strong>Preview:</strong> Countdown will show {countdownTime.days} days, {countdownTime.hours} hours, {countdownTime.minutes} minutes, and {countdownTime.seconds} seconds from now.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Advanced Settings */}

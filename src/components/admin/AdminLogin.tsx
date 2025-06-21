@@ -11,20 +11,20 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Admin password - Change this to your preferred password
-  const ADMIN_PASSWORD = 'ElaJa2025Admin!';
+  // ElaJa's exclusive admin password - Only you can access!
+  const ELAJA_ADMIN_PASSWORD = 'ElaJa2025BirthdayAdmin!';
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     setTimeout(() => {
-      if (password === ADMIN_PASSWORD) {
-        localStorage.setItem('elaja_admin_token', 'authenticated');
-        toast.success('Welcome to Admin Dashboard!');
+      if (password === ELAJA_ADMIN_PASSWORD) {
+        localStorage.setItem('elaja_admin_token', 'elaja_authenticated');
+        toast.success('Welcome ElaJa! Admin access granted.');
         onLogin();
       } else {
-        toast.error('Invalid password');
+        toast.error('Access denied. This admin panel is exclusively for ElaJa.');
       }
       setLoading(false);
     }, 1000);
@@ -35,8 +35,8 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
       <div className="glass-card p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <Shield size={64} className="mx-auto mb-4 text-yellow-400" />
-          <h1 className="font-playfair text-3xl text-yellow-400 mb-2">Admin Access</h1>
-          <p className="text-white/70">Enter your admin password to continue</p>
+          <h1 className="font-playfair text-3xl text-yellow-400 mb-2">ElaJa's Admin Panel</h1>
+          <p className="text-white/70">Exclusive access for ElaJa only</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -45,7 +45,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Admin Password"
+              placeholder="Enter your exclusive admin password"
               className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/60 backdrop-blur-md focus:border-yellow-400 focus:bg-white/15 focus:outline-none focus:ring-4 focus:ring-yellow-400/20 transition-all duration-300 pr-12"
               required
             />
@@ -64,14 +64,24 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
             className="btn-primary w-full"
           >
             <Shield size={20} />
-            {loading ? 'Authenticating...' : 'Access Admin Dashboard'}
+            {loading ? 'Verifying Access...' : 'Access ElaJa\'s Dashboard'}
           </button>
         </form>
 
         <div className="mt-8 p-4 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
-          <p className="text-yellow-400 text-sm font-medium mb-2">Demo Credentials:</p>
-          <p className="text-white/70 text-sm">Password: ElaJa2025Admin!</p>
-          <p className="text-white/60 text-xs mt-2">Change this in AdminLogin.tsx</p>
+          <p className="text-yellow-400 text-sm font-medium mb-2">🔒 Exclusive Access</p>
+          <p className="text-white/70 text-sm">This admin panel is designed exclusively for ElaJa. Only the correct password will grant access to manage the birthday celebration.</p>
+        </div>
+
+        <div className="mt-4 p-4 bg-blue-400/10 border border-blue-400/20 rounded-xl">
+          <p className="text-blue-400 text-sm font-medium mb-2">✨ Admin Features</p>
+          <ul className="text-white/60 text-xs space-y-1">
+            <li>• Manage birthday countdown timer</li>
+            <li>• Delete and reply to messages</li>
+            <li>• Download photos (admin-only)</li>
+            <li>• Control music and themes</li>
+            <li>• Full celebration customization</li>
+          </ul>
         </div>
       </div>
     </div>

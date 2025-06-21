@@ -10,6 +10,7 @@ import {
   Clock
 } from 'lucide-react';
 import { supabase, Celebration } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface AdminOverviewProps {
   celebration: Celebration;
@@ -23,6 +24,7 @@ interface Stats {
 }
 
 export default function AdminOverview({ celebration }: AdminOverviewProps) {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<Stats>({
     totalMessages: 0,
     totalPhotos: 0,
@@ -133,17 +135,26 @@ export default function AdminOverview({ celebration }: AdminOverviewProps) {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl text-blue-300 hover:bg-blue-500/30 transition-all duration-200">
+          <button 
+            onClick={() => navigate('/admin/guestbook')}
+            className="p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl text-blue-300 hover:bg-blue-500/30 transition-all duration-200"
+          >
             <MessageSquare size={24} className="mb-2" />
             <div className="font-medium">Moderate Messages</div>
             <div className="text-sm opacity-70">Review recent guestbook entries</div>
           </button>
-          <button className="p-4 bg-green-500/20 border border-green-400/30 rounded-xl text-green-300 hover:bg-green-500/30 transition-all duration-200">
+          <button 
+            onClick={() => navigate('/admin/photos')}
+            className="p-4 bg-green-500/20 border border-green-400/30 rounded-xl text-green-300 hover:bg-green-500/30 transition-all duration-200"
+          >
             <Image size={24} className="mb-2" />
             <div className="font-medium">Manage Photos</div>
             <div className="text-sm opacity-70">Organize photo gallery</div>
           </button>
-          <button className="p-4 bg-purple-500/20 border border-purple-400/30 rounded-xl text-purple-300 hover:bg-purple-500/30 transition-all duration-200">
+          <button 
+            onClick={() => navigate('/admin/quiz')}
+            className="p-4 bg-purple-500/20 border border-purple-400/30 rounded-xl text-purple-300 hover:bg-purple-500/30 transition-all duration-200"
+          >
             <Brain size={24} className="mb-2" />
             <div className="font-medium">Update Quiz</div>
             <div className="text-sm opacity-70">Add or edit quiz questions</div>

@@ -70,7 +70,8 @@ function App() {
 
   const checkAdminStatus = () => {
     const adminToken = localStorage.getItem('elaja_admin_token');
-    setIsAdmin(!!adminToken);
+    // Only allow access if the token matches ElaJa's exclusive token
+    setIsAdmin(adminToken === 'elaja_authenticated');
   };
 
   if (loading) {
