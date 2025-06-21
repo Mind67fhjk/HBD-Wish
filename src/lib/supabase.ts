@@ -37,6 +37,8 @@ export interface GuestbookMessage {
   author_name: string;
   message: string;
   author_id?: string;
+  admin_reply?: string;
+  reply_timestamp?: string;
   created_at: string;
 }
 

@@ -72,28 +72,32 @@ export default function AdminOverview({ celebration }: AdminOverviewProps) {
       value: stats.totalMessages,
       icon: MessageSquare,
       color: 'from-blue-500 to-blue-600',
-      change: '+12%'
+      change: '+12%',
+      action: () => navigate('/admin/guestbook')
     },
     {
       title: 'Photos Uploaded',
       value: stats.totalPhotos,
       icon: Image,
       color: 'from-green-500 to-green-600',
-      change: '+8%'
+      change: '+8%',
+      action: () => navigate('/admin/photos')
     },
     {
       title: 'Quiz Responses',
       value: stats.totalQuizResponses,
       icon: Brain,
       color: 'from-purple-500 to-purple-600',
-      change: '+15%'
+      change: '+15%',
+      action: () => navigate('/admin/quiz')
     },
     {
       title: 'Days Until Birthday',
       value: Math.max(0, Math.ceil((new Date(celebration.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))),
       icon: Calendar,
       color: 'from-yellow-500 to-yellow-600',
-      change: 'countdown'
+      change: 'countdown',
+      action: () => navigate('/admin/settings')
     }
   ];
 
@@ -110,7 +114,11 @@ export default function AdminOverview({ celebration }: AdminOverviewProps) {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, index) => (
-          <div key={index} className="glass-card p-6">
+          <div 
+            key={index} 
+            className="glass-card p-6 cursor-pointer hover:scale-105 transition-all duration-300"
+            onClick={stat.action}
+          >
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-xl bg-gradient-to-r ${stat.color}`}>
                 <stat.icon size={24} className="text-white" />
