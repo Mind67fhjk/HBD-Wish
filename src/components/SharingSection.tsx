@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share, Copy, Facebook, Twitter, MessageCircle, Instagram, Send } from 'lucide-react';
+import { Share, Copy, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface SharingSectionProps {
@@ -82,7 +82,7 @@ export default function SharingSection({ celebrationId, title }: SharingSectionP
               onClick={() => shareToSocial('facebook')}
               className="flex items-center justify-center gap-3 px-6 py-4 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-400/30 hover:border-blue-400/50 rounded-2xl text-blue-300 transition-all duration-300 hover:scale-105"
             >
-              <Facebook size={20} />
+              <span className="text-2xl">📘</span>
               <span className="hidden sm:inline">Facebook</span>
             </button>
             
@@ -90,7 +90,7 @@ export default function SharingSection({ celebrationId, title }: SharingSectionP
               onClick={() => shareToSocial('twitter')}
               className="flex items-center justify-center gap-3 px-6 py-4 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-400/30 hover:border-sky-400/50 rounded-2xl text-sky-300 transition-all duration-300 hover:scale-105"
             >
-              <Twitter size={20} />
+              <span className="text-2xl">🐦</span>
               <span className="hidden sm:inline">Twitter</span>
             </button>
             
@@ -106,7 +106,7 @@ export default function SharingSection({ celebrationId, title }: SharingSectionP
               onClick={() => shareToSocial('instagram')}
               className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-400/30 hover:border-pink-400/50 rounded-2xl text-purple-200 transition-all duration-300 hover:scale-105"
             >
-              <Instagram size={20} />
+              <span className="text-2xl">📷</span>
               <span className="hidden sm:inline">Instagram</span>
             </button>
           </div>
