@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Music as MusicOff } from 'lucide-react';
+import { Music, VolumeX } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -30,7 +30,7 @@ export default function Header({ title, onMusicToggle, isMusicPlaying }: HeaderP
         }`}
         title={isMusicPlaying ? 'Pause Music' : 'Play Music'}
       >
-        {isMusicPlaying ? <Music size={24} /> : <MusicOff size={24} />}
+        {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
       </button>
       
       <h1 className="font-playfair text-5xl md:text-7xl font-semibold text-white mb-8 tracking-wide">

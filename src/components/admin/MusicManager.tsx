@@ -15,29 +15,6 @@ export default function MusicManager() {
   const [currentTrack, setCurrentTrack] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const musicPresets = [
-    {
-      name: 'Happy Birthday Classic',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-      description: 'Traditional birthday celebration music'
-    },
-    {
-      name: 'Celebration Fanfare',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-      description: 'Upbeat celebration music'
-    },
-    {
-      name: 'Gentle Birthday Melody',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-      description: 'Soft and elegant birthday tune'
-    },
-    {
-      name: 'Party Time',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-      description: 'Energetic party music'
-    }
-  ];
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -45,19 +22,57 @@ export default function MusicManager() {
         const url = URL.createObjectURL(file);
         setCurrentTrack(url);
         toast.success(`Uploaded: ${file.name}`);
+        
+        // Create a test audio element to verify the file works
+        const audio = new Audio(url);
+        audio.addEventListener('canplaythrough', () => {
+          toast.success('Audio file is ready to play!');
+        });
+        audio.addEventListener('error', () => {
+          toast.error('Error loading audio file');
+        });
       } else {
         toast.error('Please upload an audio file');
       }
     }
   };
 
-  const selectPreset = (preset: any) => {
-    setCurrentTrack(preset.url);
-    toast.success(`Selected: ${preset.name}`);
-  };
+  const testAudioPlayback = () => {
+    if (!currentTrack) {
+      // Test with Web Audio API beep
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+      
+      toast.success('Test sound played! (Upload an audio file for custom music)');
+      return;
+    }
 
-  const togglePlayback = () => {
-    setIsPlaying(!isPlaying);
+    const audio = new Audio(currentTrack);
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play().then(() => {
+        setIsPlaying(true);
+        toast.success('Playing audio!');
+      }).catch(() => {
+        toast.error('Failed to play audio');
+      });
+    }
   };
 
   const saveSettings = () => {
@@ -96,52 +111,26 @@ export default function MusicManager() {
             </div>
           </div>
 
-          {/* Music Presets */}
-          <div>
-            <h3 className="text-lg font-medium text-white mb-4">Music Presets</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {musicPresets.map((preset, index) => (
-                <button
-                  key={index}
-                  onClick={() => selectPreset(preset)}
-                  className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-200 text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <Music className="text-blue-400" size={20} />
-                    <div>
-                      <h4 className="text-white font-medium">{preset.name}</h4>
-                      <p className="text-white/60 text-sm">{preset.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Current Track */}
-          {currentTrack && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-medium text-white mb-4">Current Track</h3>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={togglePlayback}
-                  className="w-12 h-12 bg-yellow-400/20 border border-yellow-400/30 rounded-full flex items-center justify-center text-yellow-400 hover:bg-yellow-400/30 transition-all duration-200"
-                >
-                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                </button>
-                <div className="flex-1">
-                  <p className="text-white font-medium">Audio Track</p>
-                  <p className="text-white/60 text-sm">Ready to play</p>
-                </div>
-                <audio
-                  src={currentTrack}
-                  controls
-                  className="max-w-xs"
-                  style={{ filter: 'invert(1) hue-rotate(180deg)' }}
-                />
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+            <h3 className="text-lg font-medium text-white mb-4">Audio Test</h3>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={testAudioPlayback}
+                className="w-12 h-12 bg-yellow-400/20 border border-yellow-400/30 rounded-full flex items-center justify-center text-yellow-400 hover:bg-yellow-400/30 transition-all duration-200"
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              </button>
+              <div className="flex-1">
+                <p className="text-white font-medium">
+                  {currentTrack ? 'Custom Audio Track' : 'Test Audio (Beep Sound)'}
+                </p>
+                <p className="text-white/60 text-sm">
+                  {currentTrack ? 'Ready to play your uploaded music' : 'Click to test audio functionality'}
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -283,11 +272,11 @@ export default function MusicManager() {
       <div className="glass-card p-6 bg-blue-400/10 border-blue-400/20">
         <h3 className="text-blue-400 font-medium mb-3">Music Setup Instructions</h3>
         <div className="space-y-2 text-white/70 text-sm">
-          <p>• Upload your own audio files or select from our presets</p>
+          <p>• Upload your own audio files for custom birthday music</p>
           <p>• Recommended format: MP3 for best compatibility</p>
           <p>• Keep file size under 10MB for optimal loading</p>
-          <p>• Test your music with different volume levels</p>
-          <p>• Consider your audience - some may prefer no auto-play</p>
+          <p>• Test your music with the play button above</p>
+          <p>• If no custom music is uploaded, a simple beep sound will play</p>
         </div>
       </div>
     </div>

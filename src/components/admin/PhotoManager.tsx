@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, Trash2, Download, Upload, Grid, List } from 'lucide-react';
+import { Image, Trash2, Download, Upload, Grid, List, Shield } from 'lucide-react';
 import { supabase, Photo } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -104,6 +104,46 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
     return data.publicUrl;
   };
 
+  const downloadPhoto = async (photo: Photo) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('celebration-photos')
+        .download(photo.file_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = photo.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Photo downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      toast.error('Failed to download photo');
+    }
+  };
+
+  const downloadAllPhotos = async () => {
+    if (photos.length === 0) return;
+    
+    toast.success('Starting download of all photos...');
+    
+    for (const photo of photos) {
+      try {
+        await downloadPhoto(photo);
+        // Small delay to prevent overwhelming the browser
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        console.error(`Failed to download ${photo.file_name}:`, error);
+      }
+    }
+  };
+
   const togglePhotoSelection = (photoId: string) => {
     setSelectedPhotos(prev => 
       prev.includes(photoId) 
@@ -127,7 +167,7 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="glass-card p-6">
           <div className="flex items-center gap-3">
             <Image className="text-green-400" size={24} />
@@ -157,6 +197,15 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
             </div>
           </div>
         </div>
+        <div className="glass-card p-6">
+          <div className="flex items-center gap-3">
+            <Shield className="text-yellow-400" size={24} />
+            <div>
+              <h3 className="text-2xl font-bold text-white">Admin</h3>
+              <p className="text-white/60">Only Access</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Controls */}
@@ -176,6 +225,15 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
               >
                 <Trash2 size={16} />
                 Delete Selected ({selectedPhotos.length})
+              </button>
+            )}
+            {photos.length > 0 && (
+              <button
+                onClick={downloadAllPhotos}
+                className="px-4 py-2 bg-green-500/20 border border-green-400/30 text-green-300 rounded-xl hover:bg-green-500/30 transition-all duration-200 flex items-center gap-2"
+              >
+                <Download size={16} />
+                Download All
               </button>
             )}
           </div>
@@ -205,9 +263,20 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
         </div>
       </div>
 
+      {/* Admin Notice */}
+      <div className="glass-card p-6 bg-yellow-400/10 border-yellow-400/20">
+        <div className="flex items-center gap-3">
+          <Shield className="text-yellow-400" size={24} />
+          <div>
+            <h4 className="text-yellow-400 font-medium">Admin Photo Management</h4>
+            <p className="text-white/70 text-sm">Only administrators can download photos. Visitors can view and upload, but cannot download media files.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Photos Display */}
       <div className="glass-card p-6">
-        <h2 className="text-xl font-semibold text-white mb-6">Photo Gallery</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">Photo Gallery Management</h2>
         
         {photos.length === 0 ? (
           <div className="text-center py-12">
@@ -237,13 +306,13 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
                   >
                     <Grid size={16} />
                   </button>
-                  <a
-                    href={getPhotoUrl(photo.file_path)}
-                    download={photo.file_name}
-                    className="p-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all duration-200"
+                  <button
+                    onClick={() => downloadPhoto(photo)}
+                    className="p-2 bg-green-500/20 text-green-300 rounded-lg hover:bg-green-500/30 transition-all duration-200"
+                    title="Download photo (Admin only)"
                   >
                     <Download size={16} />
-                  </a>
+                  </button>
                   <button
                     onClick={() => deletePhoto(photo.id)}
                     className="p-2 bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 transition-all duration-200"
@@ -285,13 +354,13 @@ export default function PhotoManager({ celebrationId }: PhotoManagerProps) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a
-                    href={getPhotoUrl(photo.file_path)}
-                    download={photo.file_name}
-                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded-lg transition-all duration-200"
+                  <button
+                    onClick={() => downloadPhoto(photo)}
+                    className="p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-all duration-200"
+                    title="Download photo (Admin only)"
                   >
                     <Download size={18} />
-                  </a>
+                  </button>
                   <button
                     onClick={() => deletePhoto(photo.id)}
                     className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-all duration-200"

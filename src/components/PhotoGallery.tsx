@@ -154,6 +154,10 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
             </button>
           )}
         </div>
+        
+        <p className="text-center text-white/60 text-sm mt-4">
+          📸 Upload and view photos • 👁️ Admin-only downloads for privacy
+        </p>
       </div>
 
       {loading && (
@@ -174,7 +178,7 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
             {photos.map((photo, index) => (
               <div
                 key={photo.id}
-                className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-lg"
+                className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 shadow-lg group relative"
                 onClick={() => openSlideshow(index)}
               >
                 <img
@@ -183,6 +187,9 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                  <Play className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={32} />
+                </div>
               </div>
             ))}
           </div>
@@ -227,6 +234,10 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
               >
                 <ChevronRight size={24} />
               </button>
+            </div>
+            
+            <div className="absolute bottom-4 right-4 text-white/80 text-sm bg-black/50 px-3 py-1 rounded-lg">
+              {currentSlideIndex + 1} / {photos.length}
             </div>
           </div>
         </div>
