@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 interface MusicPlayerProps {
   isPlaying: boolean;
@@ -7,16 +7,31 @@ interface MusicPlayerProps {
 
 export default function MusicPlayer({ isPlaying, onPlayStateChange }: MusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [hasValidAudio, setHasValidAudio] = useState(false);
 
-  // Birthday celebration music URLs (you can replace these with your preferred tracks)
-  const musicTracks = [
-    'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav', // Placeholder - replace with actual music
-    // Add more tracks as needed
-  ];
+  // Check if audio file exists and is valid
+  useEffect(() => {
+    const audio = new Audio();
+    audio.addEventListener('canplaythrough', () => {
+      setHasValidAudio(true);
+    });
+    audio.addEventListener('error', () => {
+      setHasValidAudio(false);
+    });
+    
+    // Test if the audio file exists
+    audio.src = '/birthday-music.mp3';
+    audio.load();
+    
+    return () => {
+      audio.removeEventListener('canplaythrough', () => {});
+      audio.removeEventListener('error', () => {});
+    };
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !hasValidAudio) return;
 
     if (isPlaying) {
       audio.play().catch(error => {
@@ -26,11 +41,11 @@ export default function MusicPlayer({ isPlaying, onPlayStateChange }: MusicPlaye
     } else {
       audio.pause();
     }
-  }, [isPlaying, onPlayStateChange]);
+  }, [isPlaying, onPlayStateChange, hasValidAudio]);
 
   const handleEnded = () => {
     // Loop the music or play next track
-    if (audioRef.current) {
+    if (audioRef.current && hasValidAudio) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {
         onPlayStateChange(false);
@@ -39,22 +54,31 @@ export default function MusicPlayer({ isPlaying, onPlayStateChange }: MusicPlaye
   };
 
   const handleError = () => {
-    console.error('Error loading audio');
+    console.warn('Audio file not found or invalid - music player disabled');
+    setHasValidAudio(false);
     onPlayStateChange(false);
   };
+
+  const handleCanPlay = () => {
+    setHasValidAudio(true);
+  };
+
+  // Don't render audio element if no valid audio file
+  if (!hasValidAudio) {
+    return null;
+  }
 
   return (
     <audio
       ref={audioRef}
       onEnded={handleEnded}
       onError={handleError}
+      onCanPlay={handleCanPlay}
       preload="metadata"
       loop
     >
-      {/* You can add multiple source elements for different audio formats */}
       <source src="/birthday-music.mp3" type="audio/mpeg" />
       <source src="/birthday-music.ogg" type="audio/ogg" />
-      {/* Fallback for browsers that don't support HTML5 audio */}
       Your browser does not support the audio element.
     </audio>
   );
