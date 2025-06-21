@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, MusicOff } from 'lucide-react';
+import { Music, Music as MusicOff } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
