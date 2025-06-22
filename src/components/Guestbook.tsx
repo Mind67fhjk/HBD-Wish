@@ -23,16 +23,40 @@ export default function Guestbook({ celebrationId }: GuestbookProps) {
   useEffect(() => {
     fetchMessages();
     
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates with a unique channel name for public view
     const subscription = supabase
-      .channel('guestbook_messages')
+      .channel(`public_guestbook_${celebrationId}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'guestbook_messages',
         filter: `celebration_id=eq.${celebrationId}`
-      }, () => {
-        fetchMessages();
+      }, (payload) => {
+        console.log('Public received new message:', payload);
+        const newMessage = payload.new as MessageWithReply;
+        setMessages(prev => [newMessage, ...prev]);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'guestbook_messages',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('Public received message update:', payload);
+        const updatedMessage = payload.new as MessageWithReply;
+        setMessages(prev => prev.map(msg => 
+          msg.id === updatedMessage.id ? updatedMessage : msg
+        ));
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'guestbook_messages',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('Public received message deletion:', payload);
+        const deletedMessage = payload.old as MessageWithReply;
+        setMessages(prev => prev.filter(msg => msg.id !== deletedMessage.id));
       })
       .subscribe();
 
