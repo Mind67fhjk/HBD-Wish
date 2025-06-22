@@ -23,9 +23,9 @@ export default function Guestbook({ celebrationId }: GuestbookProps) {
   useEffect(() => {
     fetchMessages();
     
-    // Subscribe to real-time updates with a unique channel name for public view
+    // Subscribe to real-time updates - using same channel name as admin
     const subscription = supabase
-      .channel(`public_guestbook_${celebrationId}`)
+      .channel(`guestbook_${celebrationId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -57,6 +57,7 @@ export default function Guestbook({ celebrationId }: GuestbookProps) {
         console.log('Public received message deletion:', payload);
         const deletedMessage = payload.old as MessageWithReply;
         setMessages(prev => prev.filter(msg => msg.id !== deletedMessage.id));
+        toast.success('Message was removed by admin', { icon: '🗑️' });
       })
       .subscribe();
 

@@ -24,9 +24,9 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
   useEffect(() => {
     fetchMessages();
     
-    // Subscribe to real-time updates with a unique channel name for admin
+    // Subscribe to real-time updates - using shared channel name
     const subscription = supabase
-      .channel(`admin_guestbook_${celebrationId}`)
+      .channel(`guestbook_${celebrationId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -98,10 +98,7 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
     setDeleting(messageId);
 
     try {
-      // Immediately remove from local state to provide instant feedback
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-
-      // Delete from database
+      // Delete from database - this will trigger real-time event for all subscribers
       const { error: deleteError } = await supabase
         .from('guestbook_messages')
         .delete()
@@ -109,19 +106,17 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
 
       if (deleteError) {
         console.error('Delete error:', deleteError);
-        // If delete failed, restore the message in local state
-        fetchMessages();
         throw deleteError;
       }
 
       console.log('Message deleted successfully from database');
       toast.success('Message deleted successfully!');
       
+      // The real-time subscription will handle removing it from the UI
+      
     } catch (error) {
       console.error('Error deleting message:', error);
       toast.error(`Failed to delete message: ${error.message}`);
-      // Restore messages if deletion failed
-      fetchMessages();
     } finally {
       setDeleting(null);
     }
