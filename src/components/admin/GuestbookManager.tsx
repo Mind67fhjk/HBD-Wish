@@ -19,19 +19,21 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMessages();
     
     // Subscribe to real-time updates
     const subscription = supabase
-      .channel('admin_guestbook')
+      .channel('admin_guestbook_updates')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'guestbook_messages',
         filter: `celebration_id=eq.${celebrationId}`
-      }, () => {
+      }, (payload) => {
+        console.log('Admin received real-time update:', payload);
         fetchMessages();
       })
       .subscribe();
@@ -49,20 +51,13 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
         .eq('celebration_id', celebrationId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
       
-      // Load admin replies from database (we'll store them in a separate table or as metadata)
-      const messagesWithReplies = (data || []).map(message => {
-        // For now, we'll use a simple approach with message metadata
-        // In production, you'd want a separate admin_replies table
-        return {
-          ...message,
-          admin_reply: message.admin_reply || undefined,
-          reply_timestamp: message.reply_timestamp || undefined
-        };
-      });
-      
-      setMessages(messagesWithReplies);
+      console.log('Fetched messages:', data);
+      setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('Failed to load messages');
@@ -72,21 +67,56 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
   };
 
   const deleteMessage = async (messageId: string) => {
-    if (!confirm('Are you sure you want to delete this message?')) return;
+    if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+      return;
+    }
+
+    console.log('Attempting to delete message:', messageId);
+    setDeleting(messageId);
 
     try {
-      const { error } = await supabase
+      // First, let's check if the message exists
+      const { data: existingMessage, error: checkError } = await supabase
+        .from('guestbook_messages')
+        .select('*')
+        .eq('id', messageId)
+        .single();
+
+      if (checkError) {
+        console.error('Error checking message:', checkError);
+        throw new Error('Message not found');
+      }
+
+      console.log('Message exists:', existingMessage);
+
+      // Now delete the message
+      const { error: deleteError } = await supabase
         .from('guestbook_messages')
         .delete()
         .eq('id', messageId);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Message deleted successfully');
       
-      toast.success('Message deleted successfully');
-      // The real-time subscription will automatically update the list
+      // Immediately update local state
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      toast.success('Message deleted successfully!');
+      
+      // Force refresh to ensure consistency
+      setTimeout(() => {
+        fetchMessages();
+      }, 500);
+      
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
+      toast.error(`Failed to delete message: ${error.message}`);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -97,7 +127,8 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
     }
 
     try {
-      // Update the message with admin reply
+      console.log('Saving reply for message:', messageId);
+      
       const { error } = await supabase
         .from('guestbook_messages')
         .update({
@@ -106,12 +137,17 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
         })
         .eq('id', messageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Reply error:', error);
+        throw error;
+      }
       
       setReplyingTo(null);
       setReplyText('');
-      toast.success('Reply saved successfully');
-      // The real-time subscription will automatically update the list
+      toast.success('Reply saved successfully!');
+      
+      // Force refresh
+      fetchMessages();
     } catch (error) {
       console.error('Error saving reply:', error);
       toast.error('Failed to save reply');
@@ -119,6 +155,8 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
   };
 
   const deleteReply = async (messageId: string) => {
+    if (!confirm('Are you sure you want to delete this reply?')) return;
+
     try {
       const { error } = await supabase
         .from('guestbook_messages')
@@ -131,11 +169,16 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
       if (error) throw error;
       
       toast.success('Reply deleted');
-      // The real-time subscription will automatically update the list
+      fetchMessages();
     } catch (error) {
       console.error('Error deleting reply:', error);
       toast.error('Failed to delete reply');
     }
+  };
+
+  const deleteSelectedPhotos = async () => {
+    // This function was incorrectly named - it should be for messages
+    // Keeping it for now but not implementing bulk delete
   };
 
   const filteredMessages = messages
@@ -226,7 +269,7 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
 
       {/* Messages List */}
       <div className="glass-card p-6">
-        <h2 className="text-xl font-semibold text-white mb-6">Guestbook Messages</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">Guestbook Messages ({filteredMessages.length})</h2>
         
         {filteredMessages.length === 0 ? (
           <div className="text-center py-12">
@@ -254,7 +297,10 @@ export default function GuestbookManager({ celebrationId }: GuestbookManagerProp
                     </button>
                     <button
                       onClick={() => deleteMessage(message.id)}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-all duration-200"
+                      disabled={deleting === message.id}
+                      className={`p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-all duration-200 ${
+                        deleting === message.id ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                       title="Delete message"
                     >
                       <Trash2 size={18} />
