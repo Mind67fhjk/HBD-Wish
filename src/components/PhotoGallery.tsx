@@ -17,6 +17,37 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
 
   useEffect(() => {
     fetchPhotos();
+    
+    // Subscribe to real-time photo updates
+    const subscription = supabase
+      .channel(`photos_${celebrationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'photos',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('New photo added:', payload);
+        const newPhoto = payload.new as Photo;
+        setPhotos(prev => [newPhoto, ...prev]);
+        toast.success('New photo added to gallery!', { icon: '📸' });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'photos',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('Photo deleted:', payload);
+        const deletedPhoto = payload.old as Photo;
+        setPhotos(prev => prev.filter(photo => photo.id !== deletedPhoto.id));
+        toast.success('Photo removed from gallery', { icon: '🗑️' });
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [celebrationId]);
 
   useEffect(() => {
@@ -73,7 +104,7 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
 
         if (uploadError) throw uploadError;
 
-        // Save photo record to database
+        // Save photo record to database - this will trigger real-time update
         const { error: dbError } = await supabase
           .from('photos')
           .insert({
@@ -95,7 +126,6 @@ export default function PhotoGallery({ celebrationId }: PhotoGalleryProps) {
 
     await Promise.all(uploadPromises);
     setLoading(false);
-    fetchPhotos();
     e.target.value = '';
   };
 

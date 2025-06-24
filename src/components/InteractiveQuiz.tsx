@@ -19,7 +19,56 @@ export default function InteractiveQuiz({ celebrationId }: InteractiveQuizProps)
 
   useEffect(() => {
     fetchQuestions();
-  }, [celebrationId]);
+    
+    // Subscribe to real-time quiz question updates
+    const subscription = supabase
+      .channel(`quiz_questions_${celebrationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'quiz_questions',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('New quiz question added:', payload);
+        fetchQuestions(); // Refetch to maintain proper order
+        toast.success('New quiz question added!', { icon: '🧠' });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'quiz_questions',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('Quiz question updated:', payload);
+        fetchQuestions(); // Refetch to get updated content
+        toast.success('Quiz question updated!', { icon: '✏️' });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'quiz_questions',
+        filter: `celebration_id=eq.${celebrationId}`
+      }, (payload) => {
+        console.log('Quiz question deleted:', payload);
+        const deletedQuestion = payload.old as QuizQuestion;
+        setQuestions(prev => prev.filter(q => q.id !== deletedQuestion.id));
+        toast.success('Quiz question removed', { icon: '🗑️' });
+        
+        // Reset quiz if it was in progress and questions changed
+        if (quizStarted && !quizCompleted) {
+          setQuizStarted(false);
+          setCurrentQuestionIndex(0);
+          setUserAnswers([]);
+          setSelectedAnswer(null);
+          toast.info('Quiz reset due to changes');
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [celebrationId, quizStarted, quizCompleted]);
 
   const fetchQuestions = async () => {
     try {
@@ -38,6 +87,11 @@ export default function InteractiveQuiz({ celebrationId }: InteractiveQuizProps)
   };
 
   const startQuiz = () => {
+    if (questions.length === 0) {
+      toast.error('No quiz questions available');
+      return;
+    }
+    
     setQuizStarted(true);
     setCurrentQuestionIndex(0);
     setUserAnswers([]);
@@ -111,6 +165,7 @@ export default function InteractiveQuiz({ celebrationId }: InteractiveQuizProps)
         <div className="text-center text-white/60">
           <Brain size={64} className="mx-auto mb-4 opacity-40" />
           <p>No quiz questions available yet.</p>
+          <p className="text-sm mt-2">Check back later for fun quiz questions!</p>
         </div>
       </div>
     );

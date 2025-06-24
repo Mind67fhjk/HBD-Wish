@@ -3,16 +3,20 @@ import { Music, Upload, Play, Pause, Volume2, VolumeX, RotateCcw } from 'lucide-
 import toast from 'react-hot-toast';
 
 export default function MusicManager() {
-  const [musicSettings, setMusicSettings] = useState({
-    autoPlay: false,
-    loop: true,
-    volume: 50,
-    fadeIn: true,
-    fadeOut: true,
-    showControls: true
+  const [musicSettings, setMusicSettings] = useState(() => {
+    const saved = localStorage.getItem('elaja_music_settings');
+    return saved ? JSON.parse(saved) : {
+      autoPlay: false,
+      loop: true,
+      volume: 50,
+      fadeIn: true,
+      fadeOut: true,
+      showControls: true,
+      customAudioUrl: null
+    };
   });
 
-  const [currentTrack, setCurrentTrack] = useState('');
+  const [currentTrack, setCurrentTrack] = useState(musicSettings.customAudioUrl || '');
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,6 +25,12 @@ export default function MusicManager() {
       if (file.type.startsWith('audio/')) {
         const url = URL.createObjectURL(file);
         setCurrentTrack(url);
+        
+        // Save the custom audio URL to settings
+        const newSettings = { ...musicSettings, customAudioUrl: url };
+        setMusicSettings(newSettings);
+        localStorage.setItem('elaja_music_settings', JSON.stringify(newSettings));
+        
         toast.success(`Uploaded: ${file.name}`);
         
         // Create a test audio element to verify the file works
@@ -62,6 +72,8 @@ export default function MusicManager() {
     }
 
     const audio = new Audio(currentTrack);
+    audio.volume = musicSettings.volume / 100;
+    
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
@@ -78,6 +90,32 @@ export default function MusicManager() {
   const saveSettings = () => {
     localStorage.setItem('elaja_music_settings', JSON.stringify(musicSettings));
     toast.success('Music settings saved!');
+    
+    // Trigger a custom event to notify the music player of changes
+    window.dispatchEvent(new CustomEvent('musicSettingsChanged', { 
+      detail: musicSettings 
+    }));
+  };
+
+  const resetSettings = () => {
+    const defaultSettings = {
+      autoPlay: false,
+      loop: true,
+      volume: 50,
+      fadeIn: true,
+      fadeOut: true,
+      showControls: true,
+      customAudioUrl: null
+    };
+    setMusicSettings(defaultSettings);
+    setCurrentTrack('');
+    localStorage.setItem('elaja_music_settings', JSON.stringify(defaultSettings));
+    toast.success('Settings reset to default');
+    
+    // Trigger event to notify music player
+    window.dispatchEvent(new CustomEvent('musicSettingsChanged', { 
+      detail: defaultSettings 
+    }));
   };
 
   return (
@@ -250,17 +288,7 @@ export default function MusicManager() {
               <Music size={20} />
               Save Music Settings
             </button>
-            <button
-              onClick={() => setMusicSettings({
-                autoPlay: false,
-                loop: true,
-                volume: 50,
-                fadeIn: true,
-                fadeOut: true,
-                showControls: true
-              })}
-              className="btn-secondary"
-            >
+            <button onClick={resetSettings} className="btn-secondary">
               <RotateCcw size={20} />
               Reset to Default
             </button>
@@ -276,7 +304,7 @@ export default function MusicManager() {
           <p>• Recommended format: MP3 for best compatibility</p>
           <p>• Keep file size under 10MB for optimal loading</p>
           <p>• Test your music with the play button above</p>
-          <p>• If no custom music is uploaded, a simple beep sound will play</p>
+          <p>• Settings will be applied to the public celebration page</p>
         </div>
       </div>
     </div>

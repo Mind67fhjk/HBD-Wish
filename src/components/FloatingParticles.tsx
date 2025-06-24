@@ -1,6 +1,32 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function FloatingParticles() {
+  const [particleIntensity, setParticleIntensity] = useState(15);
+
+  useEffect(() => {
+    // Load particle intensity from theme settings
+    const loadThemeSettings = () => {
+      const saved = localStorage.getItem('elaja_theme');
+      if (saved) {
+        const theme = JSON.parse(saved);
+        setParticleIntensity(theme.particleIntensity || 15);
+      }
+    };
+
+    loadThemeSettings();
+
+    // Listen for theme changes
+    const handleThemeChange = (event: CustomEvent) => {
+      setParticleIntensity(event.detail.particleIntensity || 15);
+    };
+
+    window.addEventListener('themeChanged', handleThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     const createFloatingStar = () => {
       const star = document.createElement('div');
@@ -65,20 +91,20 @@ export default function FloatingParticles() {
       setTimeout(() => particle.remove(), 8000);
     };
 
-    // Create initial stars
-    for (let i = 0; i < 15; i++) {
+    // Create initial stars based on intensity
+    for (let i = 0; i < particleIntensity; i++) {
       setTimeout(createFloatingStar, i * 200);
     }
 
-    // Continuous creation
-    const starInterval = setInterval(createFloatingStar, 3000);
-    const particleInterval = setInterval(createSubtleParticle, 500);
+    // Continuous creation based on intensity
+    const starInterval = setInterval(createFloatingStar, Math.max(1000, 5000 - (particleIntensity * 100)));
+    const particleInterval = setInterval(createSubtleParticle, Math.max(200, 1000 - (particleIntensity * 20)));
 
     return () => {
       clearInterval(starInterval);
       clearInterval(particleInterval);
     };
-  }, []);
+  }, [particleIntensity]);
 
   return null;
 }

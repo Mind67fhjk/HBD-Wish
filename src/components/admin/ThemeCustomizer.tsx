@@ -3,15 +3,18 @@ import { Palette, Save, RotateCcw, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ThemeCustomizer() {
-  const [theme, setTheme] = useState({
-    primaryColor: '#d4af37',
-    secondaryColor: '#f4d03f',
-    backgroundColor: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)',
-    textColor: '#ffffff',
-    accentColor: '#e8e8e8',
-    borderRadius: '24px',
-    glassOpacity: 0.05,
-    particleIntensity: 15
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('elaja_theme');
+    return saved ? JSON.parse(saved) : {
+      primaryColor: '#d4af37',
+      secondaryColor: '#f4d03f',
+      backgroundColor: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)',
+      textColor: '#ffffff',
+      accentColor: '#e8e8e8',
+      borderRadius: '24px',
+      glassOpacity: 0.05,
+      particleIntensity: 15
+    };
   });
 
   const [previewMode, setPreviewMode] = useState(false);
@@ -100,8 +103,9 @@ export default function ThemeCustomizer() {
     localStorage.setItem('elaja_theme', JSON.stringify(theme));
     toast.success('Theme saved successfully!');
     
-    // Apply theme to document
+    // Apply theme to document and trigger event for public app
     applyThemeToDocument();
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
   };
 
   const resetTheme = () => {
@@ -116,28 +120,41 @@ export default function ThemeCustomizer() {
       particleIntensity: 15
     };
     setTheme(defaultTheme);
+    localStorage.setItem('elaja_theme', JSON.stringify(defaultTheme));
     toast.success('Theme reset to default');
+    
+    // Apply default theme and trigger event
+    applyThemeToDocument(defaultTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: defaultTheme }));
   };
 
-  const applyThemeToDocument = () => {
+  const applyThemeToDocument = (themeToApply = theme) => {
     const root = document.documentElement;
-    root.style.setProperty('--primary-color', theme.primaryColor);
-    root.style.setProperty('--secondary-color', theme.secondaryColor);
-    root.style.setProperty('--accent-color', theme.accentColor);
-    root.style.setProperty('--text-color', theme.textColor);
-    root.style.setProperty('--border-radius', theme.borderRadius);
-    root.style.setProperty('--glass-opacity', theme.glassOpacity.toString());
+    root.style.setProperty('--primary-color', themeToApply.primaryColor);
+    root.style.setProperty('--secondary-color', themeToApply.secondaryColor);
+    root.style.setProperty('--accent-color', themeToApply.accentColor);
+    root.style.setProperty('--text-color', themeToApply.textColor);
+    root.style.setProperty('--border-radius', themeToApply.borderRadius);
+    root.style.setProperty('--glass-opacity', themeToApply.glassOpacity.toString());
     
     // Apply background
-    document.body.style.background = theme.backgroundColor;
+    document.body.style.background = themeToApply.backgroundColor;
+    document.body.style.backgroundSize = '400% 400%';
+    document.body.style.backgroundAttachment = 'fixed';
   };
 
   const togglePreview = () => {
     if (!previewMode) {
       applyThemeToDocument();
     } else {
-      // Reset to default
-      window.location.reload();
+      // Reset to saved theme
+      const savedTheme = localStorage.getItem('elaja_theme');
+      if (savedTheme) {
+        applyThemeToDocument(JSON.parse(savedTheme));
+      } else {
+        // Apply default theme
+        resetTheme();
+      }
     }
     setPreviewMode(!previewMode);
   };
@@ -356,7 +373,7 @@ export default function ThemeCustomizer() {
             <Eye className="text-yellow-400" size={24} />
             <div>
               <h4 className="text-yellow-400 font-medium">Preview Mode Active</h4>
-              <p className="text-white/70 text-sm">You're currently previewing your theme changes. Click "Save Theme" to make them permanent.</p>
+              <p className="text-white/70 text-sm">You're currently previewing your theme changes. Click "Save Theme" to make them permanent and apply them to the public celebration page.</p>
             </div>
           </div>
         </div>

@@ -18,7 +18,42 @@ function App() {
   useEffect(() => {
     fetchCelebration();
     checkAdminStatus();
+    loadThemeSettings();
+    
+    // Listen for theme changes from admin
+    const handleThemeChange = (event: CustomEvent) => {
+      applyTheme(event.detail);
+    };
+
+    window.addEventListener('themeChanged', handleThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange as EventListener);
+    };
   }, []);
+
+  const loadThemeSettings = () => {
+    const saved = localStorage.getItem('elaja_theme');
+    if (saved) {
+      const theme = JSON.parse(saved);
+      applyTheme(theme);
+    }
+  };
+
+  const applyTheme = (theme: any) => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary-color', theme.primaryColor);
+    root.style.setProperty('--secondary-color', theme.secondaryColor);
+    root.style.setProperty('--accent-color', theme.accentColor);
+    root.style.setProperty('--text-color', theme.textColor);
+    root.style.setProperty('--border-radius', theme.borderRadius);
+    root.style.setProperty('--glass-opacity', theme.glassOpacity.toString());
+    
+    // Apply background
+    document.body.style.background = theme.backgroundColor;
+    document.body.style.backgroundSize = '400% 400%';
+    document.body.style.backgroundAttachment = 'fixed';
+  };
 
   const fetchCelebration = async () => {
     try {
@@ -46,8 +81,21 @@ function App() {
           .limit(1)
           .single();
           
-        if (defaultError) throw defaultError;
-        setCelebration(defaultData);
+        if (defaultError) {
+          console.error('No celebration found in database, using fallback');
+          // Create a fallback celebration with ElaJa's birthday
+          setCelebration({
+            id: 'elaja-birthday',
+            title: 'Happy Birthday',
+            description: 'Join us in celebrating this special day with joy, laughter, and wonderful memories!',
+            target_date: ELAJA_BIRTHDAY,
+            is_public: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        } else {
+          setCelebration(defaultData);
+        }
       } else {
         setCelebration(data);
       }
